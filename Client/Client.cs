@@ -6,6 +6,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml;
 using HttpPostRequestLib.Net;
+using System.Diagnostics;
 
 namespace RedundancyClient
 {
@@ -140,7 +141,7 @@ namespace RedundancyClient
 
         public List<Entry> getFileHeads(string dir)
         {
-            if (Log) Console.WriteLine("Get file heads");
+            if (Log) Console.Write("Get file heads of files in {0}...", dir);
             HTTPPostRequest request = new HTTPPostRequest(this.ApiUri.ToString());
             request.Post.Add("dir", dir);
             request.Post.Add("key", ApiKey);
@@ -159,9 +160,9 @@ namespace RedundancyClient
                 string fileName = child.Attributes["fileName"].Value;
                 DateTime creationDate = DateTime.Parse(child.Attributes["creationDate"].Value);
                 Entry entry = new Entry(id, displayName, fileName, creationDate);
-                if (Log) Console.WriteLine(entry.ToString());
                 entries.Add(entry);
             }
+            if (Log) Console.WriteLine("done");
             return entries;
         }
 
@@ -231,10 +232,18 @@ namespace RedundancyClient
 
         public void Sync(string dir)
         {
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
             if (Log) Console.WriteLine("Start Synchronization of {0}", dir);
             foreach (Entry entry in getNewestFiles(dir))
                 create(entry.ID);
-            if (Log) Console.WriteLine("Synchronization finished");
+            stopwatch.Stop();
+            if (Log)
+            {
+                Console.WriteLine("Synchronization finished");
+                Console.WriteLine("Needed transactions: {0}", TransactionCount);
+                Console.WriteLine("Needed time: {0}s", stopwatch.Elapsed.TotalSeconds);
+            }
         }
 
         public List<Entry> getNewestFiles(String dir)
@@ -285,7 +294,7 @@ namespace RedundancyClient
 
         public Entry getProperties(int id)
         {
-            if (Log) Console.Write("get properties of {0}...", id);
+            if (Log) Console.Write("Get properties of {0}...", id);
             HTTPPostRequest request = new HTTPPostRequest(this.ApiUri.ToString());
             request.Post.Add("id", id.ToString());
             request.Post.Add("key", ApiKey);

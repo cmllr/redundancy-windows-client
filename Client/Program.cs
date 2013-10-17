@@ -35,28 +35,30 @@ namespace RedundancyClient
             client = new Client(apiKey, url, userAgent, syncPath); //apitestuser
             client.Log = true;
             Console.WriteLine("Server: " + new Uri(url).Host);
-            Console.WriteLine("Syncronizing into : " + syncPath);
-            if (client.checkApiKey())
-                Console.WriteLine("Daemon is ready");
-            else
+            Console.WriteLine("Synchronize into : " + syncPath);
+            if (!client.checkApiKey())
             {
                 Console.WriteLine("Daemon is not ready");
                 return;
             }
-            client.Sync();
-            
-            //FileSystemWatcher fsw = new FileSystemWatcher(syncPath);
-            //FileSystemWatcher fsw_files = new FileSystemWatcher(syncPath);
-            //fsw_files.NotifyFilter = NotifyFilters.LastWrite;
-            //fsw.NotifyFilter = NotifyFilters.Attributes | NotifyFilters.DirectoryName | NotifyFilters.FileName | NotifyFilters.LastWrite | NotifyFilters.LastAccess ;
-            //fsw.Created += new FileSystemEventHandler(fsw_Created);
-            //fsw.Deleted += new FileSystemEventHandler(fsw_Deleted);
-            //fsw_files.Changed += new FileSystemEventHandler(fsw_Changed);
-            //fsw.Renamed += new RenamedEventHandler(fsw_Renamed);
-            //fsw_files.IncludeSubdirectories = true;
-            //fsw_files.EnableRaisingEvents = true;
-            //fsw.IncludeSubdirectories = true;
-            //fsw.EnableRaisingEvents = true;	
+            else
+            {
+                Console.WriteLine("Daemon is ready");
+                client.Sync();
+
+                //FileSystemWatcher fsw = new FileSystemWatcher(syncPath);
+                //FileSystemWatcher fsw_files = new FileSystemWatcher(syncPath);
+                //fsw_files.NotifyFilter = NotifyFilters.LastWrite;
+                //fsw.NotifyFilter = NotifyFilters.Attributes | NotifyFilters.DirectoryName | NotifyFilters.FileName | NotifyFilters.LastWrite | NotifyFilters.LastAccess ;
+                //fsw.Created += new FileSystemEventHandler(fsw_Created);
+                //fsw.Deleted += new FileSystemEventHandler(fsw_Deleted);
+                //fsw_files.Changed += new FileSystemEventHandler(fsw_Changed);
+                //fsw.Renamed += new RenamedEventHandler(fsw_Renamed);
+                //fsw_files.IncludeSubdirectories = true;
+                //fsw_files.EnableRaisingEvents = true;
+                //fsw.IncludeSubdirectories = true;
+                //fsw.EnableRaisingEvents = true;
+            }
         }
 
         //static void fsw_Renamed(object sender, RenamedEventArgs e)
