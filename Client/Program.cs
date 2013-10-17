@@ -1,7 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Threading;
-using System.Text.RegularExpressions;
 namespace RedundancyClient
 {
 	class Program
@@ -9,7 +7,7 @@ namespace RedundancyClient
 		static RedundancyClient.Client client;
 		
 		public static void Main(string[] args)
-		{			
+		{
             init();
 
             //TimerCallback callback = new TimerCallback(Tick);          
@@ -35,19 +33,18 @@ namespace RedundancyClient
             string apiKey = "b034d184bfc2bd1d2dd6419aa34ac966cf406ab0c8438498c310f9b00a18ac02f5dba0391cf925594d0b5dc495d4da96f1c85e0d734a616d274a1244c2bf2bc3";
             string userAgent = "Client 1";
             client = new Client(apiKey, url, userAgent, syncPath); //apitestuser
+            client.Log = true;
             Console.WriteLine("Server: " + new Uri(url).Host);
             Console.WriteLine("Syncronizing into : " + syncPath);
-            Console.WriteLine("Server API Version: " + client.getVersion());
-            bool ack = client.acknowledge();
-            Console.WriteLine("ACK: " + ack);
-            if (ack)
+            if (client.checkApiKey())
                 Console.WriteLine("Daemon is ready");
             else
             {
                 Console.WriteLine("Daemon is not ready");
                 return;
             }
-            client.getFiles("/");
+            client.Sync();
+            
             //FileSystemWatcher fsw = new FileSystemWatcher(syncPath);
             //FileSystemWatcher fsw_files = new FileSystemWatcher(syncPath);
             //fsw_files.NotifyFilter = NotifyFilters.LastWrite;
