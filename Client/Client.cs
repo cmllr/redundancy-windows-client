@@ -262,7 +262,6 @@ namespace RedundancyClient
 
             if (!Directory.Exists(SyncPath))
                 Directory.CreateDirectory(SyncPath);
-            Dictionary<string, Entry> test =  getNewestFilesNested(dir);
             create(getNewestFilesNested(dir));
             if (Log)
             {
