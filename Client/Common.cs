@@ -1,4 +1,6 @@
-﻿using System.Text;
+﻿using System;
+using System.Text;
+
 namespace RedundancyClient
 {
 	public class Common
@@ -33,5 +35,35 @@ namespace RedundancyClient
 			System.Text.UTF8Encoding encoding = new System.Text.UTF8Encoding();			
 			return encoding.GetString(isoBytes);
 		}
+
+        public static string hiddenReadLine()
+        {
+            string input = "";
+            ConsoleKeyInfo key;
+
+            do
+            {
+                key = Console.ReadKey(true);
+
+                // Backspace Should Not Work
+                if (key.Key != ConsoleKey.Backspace && key.Key != ConsoleKey.Enter)
+                {
+                    input += key.KeyChar;
+                    Console.Write("*");
+                }
+                else
+                {
+                    if (key.Key == ConsoleKey.Backspace && input.Length > 0)
+                    {
+                        input = input.Substring(0, (input.Length - 1));
+                        Console.Write("\b \b");
+                    }
+                }
+            }
+            // Stops Receving Keys Once Enter is Pressed
+            while (key.Key != ConsoleKey.Enter);
+            Console.WriteLine();
+            return input;
+        }
 	}
 }
