@@ -9,6 +9,7 @@ Bilateral synchronization is now implemented (sync from server to client and vic
 Requirements
 ------------
 - This client requires .NET 2.0 or an equivalent Mono version to run.
+- The programme folder must contain the HTTPPostRequestLib4 assembly. You can download it here: http://download.zonicom.de/HttpPostRequestLib4.rar
 - You need to create a file named appConfig.xml in the programme folder with following content:
   ```
   <config>
