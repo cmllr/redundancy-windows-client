@@ -28,17 +28,16 @@ namespace RedundancyClient
             appConfig = AppConfig.LoadConfig("appConfig.xml");
 
             string syncPath = Path.Combine(Environment.CurrentDirectory, appConfig.SyncPath);
-            string userAgent = "Client";
+            string userAgent = "Redundancy Client";
             client = new Client(userConfig.UserName, userConfig.Password, appConfig.ApiUri, userAgent, syncPath); //apitestuser
             client.Log = true;
             Console.WriteLine("Server: " + new Uri(appConfig.ApiUri).Host);
             Console.WriteLine("Synchronize into : " + syncPath);
-            
+
+            client.getVersion(); //TODO: Versionsüberprüfung
             client.IsReady();
-            client.getVersion();
             client.Sync();
             Console.ReadKey();
-           // client.Sync();
 
             //FileSystemWatcher fsw = new FileSystemWatcher(syncPath);
             //FileSystemWatcher fsw_files = new FileSystemWatcher(syncPath);

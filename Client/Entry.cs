@@ -9,7 +9,7 @@ namespace RedundancyClient
         public String DisplayName { get; set; }
         public String ShortDisplayName { get; set; }
         public String FileName { get; set; }
-        public DateTime CreationTime { get; set; }
+        public DateTime LastWriteTime { get; set; }
         public String UserAgent { get; set; }
         public int SizeInByte { get; set; }
         public string Hash { get; set; }
@@ -30,7 +30,7 @@ namespace RedundancyClient
             this.ID = id;
             this.DisplayName = displayName;
             this.FileName = fileName;
-            this.CreationTime = creationTime;
+            this.LastWriteTime = creationTime;
         }
 
         public bool IsFolder()
