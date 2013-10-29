@@ -269,6 +269,8 @@ namespace RedundancyClient
                     if (entry.Value.IsFolder())
                     {
                         createDir(entry.Value);
+                        if (entry.Value.Entries != null)
+                            create(entry.Value.Entries);
                     }
                     else
                     {
