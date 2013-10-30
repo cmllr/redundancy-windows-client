@@ -157,38 +157,6 @@ namespace RedundancyClient
             return path.Substring(1);
         }
 
-        //private void create(int id)
-        //{
-        //    Entry entry = getProperties(id);
-        //    string path;
-        //    if (entry.IsFolder())
-        //    {
-        //        path = Path.Combine(SyncPath, preparePath(entry.DisplayName));
-        //        if (!Directory.Exists(path))
-        //        {
-        //            if (Log) Console.Write("Create dir {0}...", path);
-        //            Directory.CreateDirectory(path);
-        //            DirectoryInfo dirInfo = new DirectoryInfo(path);
-        //            dirInfo.LastWriteTime = entry.LastWriteTime;
-        //            if (Log) Console.WriteLine("done");
-        //        }
-        //    }
-        //    else
-        //    {
-        //        path = Path.Combine(SyncPath, preparePath(entry.Directory));
-        //        path = Path.Combine(path, entry.DisplayName);
-        //        if (Log) Console.Write("Get content of {0}...", path);
-        //        entry.Content = getContent(id);
-        //        if (Log) Console.WriteLine("done");
-        //        if (Log) Console.Write("Create file {0}...", path);
-        //        File.WriteAllBytes(path, entry.Content);
-        //        FileInfo fileInfo = new FileInfo(path);
-        //        fileInfo.LastWriteTime = entry.LastWriteTime;
-        //        File.SetLastWriteTime(path, entry.LastWriteTime); //TODO: Check
-        //        if (Log) Console.WriteLine("done");
-        //    }
-        //}
-
         private void create(int id)
         {
             Entry entry = getProperties(id);
@@ -302,7 +270,11 @@ namespace RedundancyClient
                 if (Log) Console.WriteLine("Authentification was successfully.");
 
             if (!Directory.Exists(SyncPath))
+            {
+                if (Log) Console.Write("Create dir {0}...", SyncPath);
                 Directory.CreateDirectory(SyncPath);
+                if (Log) Console.WriteLine("done");
+            }
             create(getNewestFilesNested(dir));
             if (Log)
             {
@@ -320,12 +292,60 @@ namespace RedundancyClient
             return getNewestFilesNested(localEntries, serverEntries);
         }
 
+        //public Dictionary<string, Entry> getNewestFilesNested(Dictionary<string, Entry> localEntries, Dictionary<string, Entry> serverEntries)
+        //{
+        //    Dictionary<string, Entry> newestEntries = new Dictionary<string, Entry>();
+
+        //    foreach (KeyValuePair<string, Entry> entry in localEntries)
+        //    {
+        //        if (serverEntries.ContainsKey(entry.Key)) //falls Eintrag in beiden Listen
+        //        {
+        //            if (entry.Value.IsFolder()) //falls beides Ordner sind
+        //            {
+        //                newestEntries.Add(entry.Key, serverEntries[entry.Key]);
+        //                newestEntries[entry.Key].Entries = getNewestFilesNested(entry.Value.Entries, serverEntries[entry.Key].Entries);
+        //            }
+        //            else //falls beides Dateien sind
+        //            {
+        //                if (Log) Console.Write("Compare versions of {0}...", entry.Value.DisplayName);
+        //                DateTime localLastWriteTime = entry.Value.LastWriteTime;
+        //                DateTime serverLastWriteTime = serverEntries[entry.Key].LastWriteTime;
+        //                if (localLastWriteTime != serverLastWriteTime)
+        //                {
+        //                    if (localLastWriteTime < serverLastWriteTime)
+        //                    {
+        //                        if (Log) Console.WriteLine("server file is newer");
+        //                        newestEntries.Add(entry.Key, serverEntries[entry.Key]);
+        //                    }
+        //                    else
+        //                    {
+        //                        if (Log) Console.WriteLine("client file is newer");
+        //                        newestEntries.Add(entry.Key, entry.Value);
+        //                    }
+        //                }
+        //                else
+        //                    if (Log) Console.WriteLine("both up-to-date");
+        //            }
+        //            serverEntries.Remove(entry.Key);
+        //        }
+        //        else //falls Eintrag nur in localEntries
+        //        {
+        //            newestEntries.Add(entry.Key, entry.Value);
+        //        }
+        //    }
+
+        //    //Einträge müssen nur noch hinz. werden, überschneidende Teilmengen wurden davor gefiltert
+        //    foreach (KeyValuePair<string, Entry> entry in serverEntries)
+        //        newestEntries.Add(entry.Key, entry.Value);
+
+        //    return newestEntries;
+        //}
+
         public Dictionary<string, Entry> getNewestFilesNested(Dictionary<string, Entry> localEntries, Dictionary<string, Entry> serverEntries)
         {
             Dictionary<string, Entry> newestEntries = new Dictionary<string, Entry>();
 
             foreach (KeyValuePair<string, Entry> entry in localEntries)
-            {
                 if (serverEntries.ContainsKey(entry.Key)) //falls Eintrag in beiden Listen
                 {
                     if (entry.Value.IsFolder()) //falls beides Ordner sind
@@ -335,38 +355,49 @@ namespace RedundancyClient
                     }
                     else //falls beides Dateien sind
                     {
-                        if (Log) Console.Write("Compare versions of {0}...", entry.Value.DisplayName);
-                        DateTime localLastWriteTime = entry.Value.LastWriteTime;
-                        DateTime serverLastWriteTime = serverEntries[entry.Key].LastWriteTime;
-                        if (localLastWriteTime != serverLastWriteTime)
-                        {
-                            if (localLastWriteTime < serverLastWriteTime)
-                            {
-                                if (Log) Console.WriteLine("server file is newer");
-                                newestEntries.Add(entry.Key, serverEntries[entry.Key]);
-                            }
-                            else
-                            {
-                                if (Log) Console.WriteLine("client file is newer");
-                                newestEntries.Add(entry.Key, entry.Value);
-                            }
-                        }
-                        else
-                            if (Log) Console.WriteLine("both up-to-date");
+                        Entry newestEntry = GetNewestFile(entry.Value, serverEntries[entry.Key]);
+                        if (newestEntry != null)
+                            newestEntries.Add(entry.Key, newestEntry);
                     }
                     serverEntries.Remove(entry.Key);
                 }
                 else //falls Eintrag nur in localEntries
-                {
                     newestEntries.Add(entry.Key, entry.Value);
-                }
-            }
 
             //Einträge müssen nur noch hinz. werden, überschneidende Teilmengen wurden davor gefiltert
             foreach (KeyValuePair<string, Entry> entry in serverEntries)
                 newestEntries.Add(entry.Key, entry.Value);
 
             return newestEntries;
+        }
+
+        /// <summary>
+        /// Gibt den Entry zurück, der die aktuellste LastWriteTime besitzt.
+        /// Falls beide das gleiche Alter besitzen, wird null zurückgegeben.
+        /// </summary>
+        /// <param name="localEntry"></param>
+        /// <param name="serverEntry"></param>
+        /// <returns></returns>
+        private Entry GetNewestFile(Entry localEntry, Entry serverEntry)
+        {
+            if (Log) Console.Write("Compare versions of {0}...", localEntry.DisplayName);
+            DateTime localLastWriteTime = localEntry.LastWriteTime;
+            DateTime serverLastWriteTime = serverEntry.LastWriteTime;
+            if (localLastWriteTime == serverLastWriteTime)
+            {
+                if (Log) Console.WriteLine("both up-to-date");
+                return null;
+            }
+            else if (localLastWriteTime < serverLastWriteTime)
+            {
+                if (Log) Console.WriteLine("server file is newer");
+                return serverEntry;
+            }
+            else
+            {
+                if (Log) Console.WriteLine("client file is newer");
+                return localEntry;
+            }
         }
 
         public Dictionary<string, Entry> getLocalFilesNested(string root)
