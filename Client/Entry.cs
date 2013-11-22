@@ -18,19 +18,20 @@ namespace RedundancyClient
         public Byte[] Content { get; set; }
         public Dictionary<string, Entry> Entries { get; set; }
         public bool FromServer { get; set; }
+        public bool ContentIncomplete { get; set; }
 
         public Entry(bool fromServer)
         {
             this.FromServer = fromServer;
         }
 
-        public Entry(bool fromServer, int id, string displayName, string fileName, DateTime creationTime)
+        public Entry(bool fromServer, int id, string displayName, string fileName, DateTime lastWriteTime)
         {
             this.FromServer = fromServer;
             this.ID = id;
             this.DisplayName = displayName;
             this.FileName = fileName;
-            this.LastWriteTime = creationTime;
+            this.LastWriteTime = lastWriteTime;
         }
 
         public bool IsFolder()
@@ -48,6 +49,10 @@ namespace RedundancyClient
             builder.Append(FileName);
             builder.Append("; ");
             builder.Append(Directory);
+            builder.Append("; FromServer: ");
+            builder.Append(FromServer);
+            builder.Append("; ContentIncomplete: ");
+            builder.Append(ContentIncomplete);
             return builder.ToString();
         }
     }

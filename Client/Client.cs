@@ -42,7 +42,12 @@ namespace RedundancyClient
         public string UserAgent { get; private set; }
         public int TransactionCount { get; set; }
         public string SyncPath { get; private set; }
-        public bool Log { get; set; }
+        public Log Log { get; private set;}
+        public bool DoLog 
+        {
+            get { return Log.DoLog; }
+            set { Log.DoLog = value; }
+        }
 
         private string apiKey;
         private SecureString password;
@@ -54,66 +59,99 @@ namespace RedundancyClient
             this.ApiUri = new Uri(url);
             this.UserAgent = userAgent;
             this.SyncPath = syncPath;
-            this.Log = false;
+            this.Log = new Log();
         }
 
         private string getApiKey()
         {
-            if (Log) Console.Write("Get API Key...");
-            HTTPPostRequest request = new HTTPPostRequest(this.ApiUri.ToString());
-            request.Post.Add("method", Action.getApiKey.ToString());
-            request.Post.Add("userName", UserName);
-            request.Post.Add("password", StringCryptography.ToInsecureString(password));
-            request.UserAgent = UserAgent;
-            TransactionCount++;
-            string content = parseXMLForSingleValue(request.Submit());
-            request.Post.Clear();
-            if (Log) Console.WriteLine("done");
-            if (content == "")
+            try
+            {
+                Log.Write("Get API Key...");
+                HTTPPostRequest request = new HTTPPostRequest(this.ApiUri.ToString());
+                request.Post.Add("method", Action.getApiKey.ToString());
+                request.Post.Add("userName", UserName);
+                request.Post.Add("password", StringCryptography.ToInsecureString(password));
+                request.UserAgent = UserAgent;
+                TransactionCount++;
+                string content = parseXMLForSingleValue(request.Submit());
+                request.Post.Clear();
+                if (string.IsNullOrEmpty(content))
+                    Log.WriteLineException("failed");
+                else
+                    Log.WriteLine("done");
+                if (string.IsNullOrEmpty(content))
+                    return null;
+                return content;
+            }
+            catch (Exception ex)
+            {
+                Log.WriteException(ex.Message);
                 return null;
-            return content;
+            }
         }
 
         public bool IsReady()
         {
-            if (string.IsNullOrEmpty(apiKey))
+            if (string.IsNullOrEmpty(apiKey)) //falls apiKey noch nicht angefordert
                 apiKey = getApiKey();
             return apiKey != null;
         }
 
         public string getVersion()
         {
-            if (Log) Console.Write("Get API version...");
+            Log.Write("Get API version...");
             HTTPPostRequest request = new HTTPPostRequest(this.ApiUri.ToString());
             request.Post.Add("method", Action.getVersion.ToString());
             request.UserAgent = UserAgent;
             TransactionCount++;
             string content = parseXMLForSingleValue(request.Submit());
-            if (Log) Console.WriteLine(content);
+            if (string.IsNullOrEmpty(content))
+                Log.WriteLineException("failed");
+            else
+                Log.WriteLine(content);
             return content;
         }
 
         private string parseXMLForSingleValue(string xml)
         {
-            XmlDocument doc = new XmlDocument();
-            doc.LoadXml(xml);
-            XmlNode root = doc.DocumentElement;
-            return root.InnerText;
+            try
+            {
+                XmlDocument doc = new XmlDocument();
+                doc.LoadXml(xml);
+                XmlNode root = doc.DocumentElement;
+                return root.InnerText;
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         public Dictionary<string, Entry> getFileHeadsAsDic(string dir)
         {
-            if (Log) Console.Write("Get file heads of files in {0}...", dir);
-            HTTPPostRequest request = new HTTPPostRequest(this.ApiUri.ToString());
-            request.Post.Add("dir", dir);
-            request.Post.Add("key", apiKey);
-            request.Post.Add("method", Action.getFileHeadsAsXML.ToString());
-            request.UserAgent = UserAgent;
-            TransactionCount++;
-            string content = request.Submit();
-            Dictionary<string, Entry> entries = ParseXMLForGetFileHeadsAsDic(content);
-            if (Log) Console.WriteLine("done");
-            return entries;
+            Log.Write(string.Format("Get file heads of files in {0}...", dir));
+            try
+            {
+                HTTPPostRequest request = new HTTPPostRequest(this.ApiUri.ToString());
+                request.Post.Add("dir", dir);
+                request.Post.Add("key", apiKey);
+                request.Post.Add("method", Action.getFileHeadsAsXML.ToString());
+                request.UserAgent = UserAgent;
+                TransactionCount++;
+
+                string content = request.Submit();
+                Dictionary<string, Entry> entries = ParseXMLForGetFileHeadsAsDic(content);
+
+                Log.WriteLine("done");
+                return entries;
+            }
+            catch(Exception ex)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Log.WriteLineException(string.Format("failed ({0})", ex.Message));
+                Console.ResetColor();
+                return null; //TODO: Schauen, ob lokale Dateien dann nicht als aktuell gelten und Serverdaten ersetzen könnten
+            }
         }
 
         Dictionary<string, Entry> ParseXMLForGetFileHeadsAsDic(string xml)
@@ -157,37 +195,37 @@ namespace RedundancyClient
             return path.Substring(1);
         }
 
-        private void create(int id)
-        {
-            Entry entry = getProperties(id);
-            string path;
-            if (entry.IsFolder())
-            {
-                path = Path.Combine(SyncPath, preparePath(entry.DisplayName));
-                if (!Directory.Exists(path))
-                {
-                    if (Log) Console.Write("Create dir {0}...", path);
-                    Directory.CreateDirectory(path);
-                    DirectoryInfo dirInfo = new DirectoryInfo(path);
-                    dirInfo.LastWriteTime = entry.LastWriteTime;
-                    if (Log) Console.WriteLine("done");
-                }
-            }
-            else
-            {
-                path = Path.Combine(SyncPath, preparePath(entry.Directory));
-                path = Path.Combine(path, entry.DisplayName);
-                if (Log) Console.Write("Get content of {0}...", path);
-                entry.Content = getContent(id);
-                if (Log) Console.WriteLine("done");
-                if (Log) Console.Write("Create file {0}...", path);
-                File.WriteAllBytes(path, entry.Content);
-                FileInfo fileInfo = new FileInfo(path);
-                fileInfo.LastWriteTime = entry.LastWriteTime;
-                File.SetLastWriteTime(path, entry.LastWriteTime); //TODO: Check
-                if (Log) Console.WriteLine("done");
-            }
-        }
+        //private void create(int id)
+        //{
+        //    Entry entry = getProperties(id);
+        //    string path;
+        //    if (entry.IsFolder())
+        //    {
+        //        path = Path.Combine(SyncPath, preparePath(entry.DisplayName));
+        //        if (!Directory.Exists(path))
+        //        {
+        //            if (Log) Console.Write("Create dir {0}...", path);
+        //            Directory.CreateDirectory(path);
+        //            DirectoryInfo dirInfo = new DirectoryInfo(path);
+        //            dirInfo.LastWriteTime = entry.LastWriteTime;
+        //            if (Log) Console.WriteLine("done");
+        //        }
+        //    }
+        //    else
+        //    {
+        //        path = Path.Combine(SyncPath, preparePath(entry.Directory));
+        //        path = Path.Combine(path, entry.DisplayName);
+        //        if (Log) Console.Write("Get content of {0}...", path);
+        //        entry.Content = getContent(id);
+        //        if (Log) Console.WriteLine("done");
+        //        if (Log) Console.Write("Create file {0}...", path);
+        //        File.WriteAllBytes(path, entry.Content);
+        //        FileInfo fileInfo = new FileInfo(path);
+        //        fileInfo.LastWriteTime = entry.LastWriteTime;
+        //        File.SetLastWriteTime(path, entry.LastWriteTime); //TODO: Check
+        //        if (Log) Console.WriteLine("done");
+        //    }
+        //}
 
         private void create(Entry entry)
         {
@@ -197,11 +235,11 @@ namespace RedundancyClient
                 path = Path.Combine(SyncPath, preparePath(entry.DisplayName));
                 if (!Directory.Exists(path))
                 {
-                    if (Log) Console.Write("Create dir {0}...", path);
+                    Log.Write(string.Format("Create dir {0}...", path));
                     Directory.CreateDirectory(path);
                     DirectoryInfo dirInfo = new DirectoryInfo(path);
                     dirInfo.LastWriteTime = entry.LastWriteTime;
-                    if (Log) Console.WriteLine("done");
+                    Log.WriteLine("done");
                 }
             }
             else
@@ -209,15 +247,15 @@ namespace RedundancyClient
                 Entry fileEntry = getProperties(entry.ID);
                 path = Path.Combine(SyncPath, preparePath(fileEntry.Directory));
                 path = Path.Combine(path, fileEntry.DisplayName);
-                if (Log) Console.Write("Get content of {0}...", path);
+                Log.Write(string.Format("Get content of {0}...", path));
                 fileEntry.Content = getContent(fileEntry.ID);
-                if (Log) Console.WriteLine("done");
-                if (Log) Console.Write("Create file {0}...", path);
+                Log.WriteLine("done");
+                Log.Write(string.Format("Create file {0}...", path));
                 File.WriteAllBytes(path, fileEntry.Content);
                 FileInfo fileInfo = new FileInfo(path);
                 fileInfo.LastWriteTime = fileEntry.LastWriteTime;
                 File.SetLastWriteTime(path, fileEntry.LastWriteTime); //TODO: Check
-                if (Log) Console.WriteLine("done");
+                Log.WriteLine("done");
             }
         }
 
@@ -256,30 +294,33 @@ namespace RedundancyClient
         public void Sync(string dir)
         {
             Stopwatch stopwatch = new Stopwatch(); ;
-            if (Log)
+            getVersion();
+            if (IsReady() == false)
             {
-                stopwatch.Start();
-                Console.WriteLine("Start Synchronization of {0}", dir);
-            }
-            if (string.IsNullOrEmpty(apiKey))
-            {
-                if (Log) Console.WriteLine("Synchronization cancelled. Authentification failed.");
+                Log.WriteLineException("Authentification failed. Synchronization cancelled.");
                 return;
             }
-            else
-                if (Log) Console.WriteLine("Authentification was successfully.");
+             else
+                Log.WriteLine(string.Format("Authentification was successfully. Start synchronization of {0}", dir));
+
+            if (DoLog)
+            {
+                getVersion();
+                IsReady();
+                stopwatch.Start();
+            }
 
             if (!Directory.Exists(SyncPath))
             {
-                if (Log) Console.Write("Create dir {0}...", SyncPath);
+                Log.Write(string.Format("Create dir {0}...", SyncPath));
                 Directory.CreateDirectory(SyncPath);
-                if (Log) Console.WriteLine("done");
+                Log.WriteLine("done");
             }
             create(getNewestFilesNested(dir));
-            if (Log)
+            if (DoLog)
             {
                 stopwatch.Stop();
-                Console.WriteLine("Synchronization finished");
+                Console.WriteLine("Synchronization of {0} finished", dir);
                 Console.WriteLine("Needed transactions: {0}", TransactionCount);
                 Console.WriteLine("Needed time: {0}s", stopwatch.Elapsed.TotalSeconds);
             }
@@ -289,6 +330,11 @@ namespace RedundancyClient
         {
             Dictionary<string, Entry> localEntries = getLocalFilesNested(root);
             Dictionary<string, Entry> serverEntries = getServerFilesNested(root);
+            if (serverEntries == null)
+            {
+                Log.WriteLineException("Konnte keine Daten vom Server laden.");
+                return new Dictionary<string, Entry>();
+            }
             return getNewestFilesNested(localEntries, serverEntries);
         }
 
@@ -348,25 +394,42 @@ namespace RedundancyClient
             foreach (KeyValuePair<string, Entry> entry in localEntries)
                 if (serverEntries.ContainsKey(entry.Key)) //falls Eintrag in beiden Listen
                 {
+                    Entry serverEntry = serverEntries[entry.Key];
                     if (entry.Value.IsFolder()) //falls beides Ordner sind
                     {
-                        newestEntries.Add(entry.Key, serverEntries[entry.Key]);
-                        newestEntries[entry.Key].Entries = getNewestFilesNested(entry.Value.Entries, serverEntries[entry.Key].Entries);
+                        Log.WriteLine(string.Format("Compare {0}", entry.Key));
+                        if (serverEntry.ContentIncomplete == false)
+                        {
+                            newestEntries.Add(entry.Key, serverEntry);
+                            newestEntries[entry.Key].Entries = getNewestFilesNested(entry.Value.Entries, serverEntry.Entries);
+                        }
+                        else
+                        {
+                            Console.ForegroundColor = ConsoleColor.Red;
+                            Console.WriteLine("{0} from server is incomplete. Synchronization of this folder has been cancelled.", entry.Key);
+                            Console.ResetColor();
+                        }
                     }
                     else //falls beides Dateien sind
                     {
-                        Entry newestEntry = GetNewestFile(entry.Value, serverEntries[entry.Key]);
+                        Entry newestEntry = GetNewestFile(entry.Value, serverEntry);
                         if (newestEntry != null)
                             newestEntries.Add(entry.Key, newestEntry);
                     }
                     serverEntries.Remove(entry.Key);
                 }
                 else //falls Eintrag nur in localEntries
+                {
+                    Log.WriteLine(string.Format("{0} exists only at client", entry.Key));
                     newestEntries.Add(entry.Key, entry.Value);
+                }
 
             //Einträge müssen nur noch hinz. werden, überschneidende Teilmengen wurden davor gefiltert
             foreach (KeyValuePair<string, Entry> entry in serverEntries)
+            {
+                Log.WriteLine(string.Format("{0} exists only at server", entry.Key));
                 newestEntries.Add(entry.Key, entry.Value);
+            }
 
             return newestEntries;
         }
@@ -380,22 +443,22 @@ namespace RedundancyClient
         /// <returns></returns>
         private Entry GetNewestFile(Entry localEntry, Entry serverEntry)
         {
-            if (Log) Console.Write("Compare versions of {0}...", localEntry.DisplayName);
+            Log.Write(string.Format("Compare {0}...", localEntry.DisplayName));
             DateTime localLastWriteTime = localEntry.LastWriteTime;
             DateTime serverLastWriteTime = serverEntry.LastWriteTime;
             if (localLastWriteTime == serverLastWriteTime)
             {
-                if (Log) Console.WriteLine("both up-to-date");
+                Log.WriteLine("both up-to-date");
                 return null;
             }
             else if (localLastWriteTime < serverLastWriteTime)
             {
-                if (Log) Console.WriteLine("server file is newer");
+                Log.WriteLine("server file is newer");
                 return serverEntry;
             }
             else
             {
-                if (Log) Console.WriteLine("client file is newer");
+                Log.WriteLine("client file is newer");
                 return localEntry;
             }
         }
@@ -435,15 +498,26 @@ namespace RedundancyClient
         public Dictionary<string, Entry> getServerFilesNested(string root)
         {
             Dictionary<string, Entry> entries = getFileHeadsAsDic(root);
+
+            if (entries == null) //bei Fehler
+            {
+                //TODO
+            }
+
+            int i = 0;
             foreach (KeyValuePair<string, Entry> entry in entries)
-                if (entry.Value.IsFolder())
+                if (entry.Value.IsFolder() && entry.Value.ContentIncomplete == false)
+                {
+                    i++;
                     entry.Value.Entries = getServerFilesNested(entry.Value.DisplayName);
+                    entry.Value.ContentIncomplete = entry.Value.Entries == null;
+                }
             return entries;
         }
 
         public Entry getProperties(int id)
         {
-            if (Log) Console.Write("Get properties of {0}...", id);
+            Log.Write(string.Format("Get properties of {0}...", id));
             HTTPPostRequest request = new HTTPPostRequest(this.ApiUri.ToString());
             request.Post.Add("id", id.ToString());
             request.Post.Add("key", apiKey);
@@ -454,7 +528,7 @@ namespace RedundancyClient
             string content = request.Submit();
 
             Entry entry = parseXMLForGetProperties(content);
-            if (Log) Console.WriteLine("done");
+            Log.WriteLine("done");
             return entry;
         }
 
@@ -495,7 +569,7 @@ namespace RedundancyClient
 
         public bool uploadFile(string path, string currentDir, DateTime timestamp)
         {
-            if (Log) Console.Write("Uploading {0}...", path);
+            Log.Write(string.Format("Uploading {0}...", path));
             HTTPPostRequest request = new HTTPPostRequest(this.ApiUri.ToString());
             request.Post.Add("key", apiKey);
             request.Post.Add("method", Action.uploadFile.ToString());
@@ -505,8 +579,9 @@ namespace RedundancyClient
             request.Files.Add("userfile[]", path);
             request.UserAgent = UserAgent;
             TransactionCount++;
-            bool result = bool.Parse(parseXMLForSingleValue(request.Submit()));
-            if (Log) Console.WriteLine(result ? "done" : "failed");
+            string toParse = parseXMLForSingleValue(request.Submit());
+            bool result = bool.Parse(toParse != null ? toParse : "false");
+            Log.WriteLine(result ? "done" : "failed");
             return result;
         }
 
@@ -602,7 +677,7 @@ namespace RedundancyClient
 
         public bool createDir(Entry entry)
         {
-            if (Log) Console.Write("Create directory {0}...", entry.DisplayName);
+            Log.Write(string.Format("Create directory {0}...", entry.DisplayName));
             string dirName = entry.DisplayName.Substring(entry.Directory.Length);
             dirName = dirName.Substring(0, dirName.Length - 1);
             HTTPPostRequest request = new HTTPPostRequest(this.ApiUri.ToString());
@@ -611,8 +686,9 @@ namespace RedundancyClient
             request.Post.Add("entry", dirName);
             request.Post.Add("dir", entry.Directory);
             request.UserAgent = UserAgent;
-            bool result = bool.Parse(parseXMLForSingleValue(request.Submit()));
-            if (Log) Console.WriteLine(result ? "done" : "failed");
+            string toParse = parseXMLForSingleValue(request.Submit());
+            bool result = bool.Parse(toParse != null ? toParse : "false");
+            Log.WriteLine(result ? "done" : "failed");
             return result;
         }
 

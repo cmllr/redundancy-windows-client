@@ -47,6 +47,7 @@
     <Compile Include="AppConfig.cs" />
     <Compile Include="Client.cs" />
     <Compile Include="Common.cs" />
+    <Compile Include="Log.cs" />
     <Compile Include="UserConfig.cs" />
     <Compile Include="Entry.cs" />
     <Compile Include="Program.cs" />

@@ -30,12 +30,10 @@ namespace RedundancyClient
             string syncPath = Path.Combine(Environment.CurrentDirectory, appConfig.SyncPath);
             string userAgent = "Redundancy Client";
             client = new Client(userConfig.UserName, userConfig.Password, appConfig.ApiUri, userAgent, syncPath); //apitestuser
-            client.Log = true;
+            client.DoLog = true;
             Console.WriteLine("Server: " + new Uri(appConfig.ApiUri).Host);
             Console.WriteLine("Synchronize into : " + syncPath);
 
-            client.getVersion(); //TODO: Versionsüberprüfung
-            client.IsReady();
             client.Sync();
             Console.ReadKey();
 
