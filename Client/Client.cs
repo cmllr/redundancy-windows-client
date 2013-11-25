@@ -147,10 +147,8 @@ namespace RedundancyClient
             }
             catch(Exception ex)
             {
-                Console.ForegroundColor = ConsoleColor.Red;
                 Log.WriteLineException(string.Format("failed ({0})", ex.Message));
-                Console.ResetColor();
-                return null; //TODO: Schauen, ob lokale Dateien dann nicht als aktuell gelten und Serverdaten ersetzen könnten
+                return null; //TODO: Überprüfen, ob lokale Dateien dann nicht als aktuell gelten und Serverdaten ersetzen könnten
             }
         }
 
@@ -404,11 +402,7 @@ namespace RedundancyClient
                             newestEntries[entry.Key].Entries = getNewestFilesNested(entry.Value.Entries, serverEntry.Entries);
                         }
                         else
-                        {
-                            Console.ForegroundColor = ConsoleColor.Red;
-                            Console.WriteLine("{0} from server is incomplete. Synchronization of this folder has been cancelled.", entry.Key);
-                            Console.ResetColor();
-                        }
+                            Log.WriteException(string.Format("{0} from server is incomplete. Synchronization of this folder has been cancelled.", entry.Key));
                     }
                     else //falls beides Dateien sind
                     {
@@ -567,7 +561,26 @@ namespace RedundancyClient
             return result;
         }
 
-        public bool uploadFile(string path, string currentDir, DateTime timestamp)
+        private bool uploadFile(string path, string currentDir, DateTime timestamp)
+        {
+            try
+            {
+                FileInfo fileInfo = new FileInfo(path);
+                if (exists(fileInfo.Name, currentDir))
+                {
+                    //TODO Datei löschen
+                    //Löschmethode redesignen
+                    return true;
+                }
+            }
+            catch(Exception ex)
+            {
+                Log.WriteException("File uploaded failed: " + ex.Message);
+            }
+            return false;
+        }
+
+        private bool uploadData(string path, string currentDir, DateTime timestamp)
         {
             Log.Write(string.Format("Uploading {0}...", path));
             HTTPPostRequest request = new HTTPPostRequest(this.ApiUri.ToString());

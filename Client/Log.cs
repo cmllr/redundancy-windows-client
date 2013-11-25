@@ -14,7 +14,7 @@ namespace RedundancyClient
         public Log()
         {
             exceptionColor = ConsoleColor.Red;
-            defaultColor = ConsoleColor.Gray;
+            defaultColor = Console.ForegroundColor;
         }
         #endregion
 
