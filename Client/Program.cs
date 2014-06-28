@@ -37,12 +37,12 @@ namespace Client
 
         private static void mItemSettings_Click(object sender, EventArgs e)
         {
-            throw new NotImplementedException("TODO: Implement settings dialog.");
+            throw new NotImplementedException();
         }
 
         private static void mItemExit_Click(object sender, EventArgs e)
         {
-            Application.Exit(); //Removes trayIcon from Tray.
+            Application.Exit();
         }
     }
 }
