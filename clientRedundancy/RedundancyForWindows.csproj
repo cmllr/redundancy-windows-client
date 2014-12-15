@@ -7,8 +7,8 @@
     <ProjectGuid>{338BB490-B44F-4CE1-B293-9003014C2E1F}</ProjectGuid>
     <OutputType>WinExe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>clientRedundancy</RootNamespace>
-    <AssemblyName>clientRedundancy</AssemblyName>
+    <RootNamespace>RedundancyForWindows</RootNamespace>
+    <AssemblyName>RedundancyForWindows</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <PublishUrl>publish\</PublishUrl>
@@ -53,6 +53,12 @@
     <StartupObject />
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="libRedundancy">
+      <HintPath>..\..\libRedundancy\libRedundancy\libRedundancy\bin\Release\libRedundancy.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>..\..\libRedundancy\libRedundancy\libRedundancy\bin\Release\Newtonsoft.Json.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Drawing" />
@@ -64,6 +70,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CConfigurationManager.cs" />
+    <Compile Include="CSync.cs" />
     <Compile Include="frmSettings.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -77,7 +85,7 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
-    <Compile Include="UserInterface.cs" />
+    <Compile Include="CUserInterface.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
@@ -112,12 +120,6 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\libRedundancy\libRedundancy.csproj">
-      <Project>{c1ecc709-5416-4881-bf30-5d2b9e2c101c}</Project>
-      <Name>libRedundancy</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

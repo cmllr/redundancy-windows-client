@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("Redundancy for Windows")]
-[assembly: AssemblyCopyright("Copyright © Mark Hähnel 2014")]
+[assembly: AssemblyCopyright("Copyright © Redundancy 2014")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

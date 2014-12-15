@@ -1,4 +1,4 @@
-﻿namespace clientRedundancy
+﻿namespace RedundancyForWindows
 {
 	partial class frmSettings
 	{

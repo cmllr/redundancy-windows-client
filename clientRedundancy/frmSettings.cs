@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace clientRedundancy
+namespace RedundancyForWindows
 {
 	public partial class frmSettings : Form
 	{
