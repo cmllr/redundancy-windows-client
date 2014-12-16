@@ -1,5 +1,5 @@
 language: csharp
 script:
- - nuget restore libRedundancy.sln
- - xbuild libRedundancy.sln
+ - nuget restore Redundancy.sln
+ - xbuild Redundancy.sln
  
