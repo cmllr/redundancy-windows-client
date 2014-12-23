@@ -70,7 +70,7 @@ namespace RedundancyForWindows
 			}
 		}
 
-		public volatile bool Syncing { get; private set; }
+		public bool Syncing { get; private set; }
 		public bool Enabled { get; private set; }
 		private CConfigurationManager conf { get; set; }
 		private libRedundancy.libRedundancy api { get; set; }
